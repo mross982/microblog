@@ -30,6 +30,12 @@ def index():
     ]
     return render_template('index.html', title='Home', posts=posts)
 
+'''
+The render_template() function invokes the Jinja2 template engine that comes bundled 
+with the Flask framework. Jinja2 substitutes {{ ... }} blocks in the template with the 
+corresponding values, given by the arguments provided in the render_template() call.
+'''
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -37,6 +43,7 @@ def login():
         return redirect(url_for('index'))
     form = LoginForm()
     if form.validate_on_submit():
+        # user = {'username', 'Michael'} # mock user object for initial dev
         user = User.query.filter_by(username=form.username.data).first()
         if user is None or not user.check_password(form.password.data):
             flash('Invalid username or password')
