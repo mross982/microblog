@@ -15,7 +15,8 @@ migrate = Migrate(app, db)
 login = LoginManager(app)
 login.login_view = 'login'
 
-from app import routes, models
+# app is the package; routes, models, etc. are the modules
+from app import routes, models, errors
 
 '''
 One aspect that may seem confusing at first is that there are two entities named app. 

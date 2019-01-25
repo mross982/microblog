@@ -3,10 +3,12 @@ from flask import render_template, flash, redirect, url_for, request
 from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.urls import url_parse
 from app import app, db
-from app.forms import LoginForm, RegistrationForm, EditProfileForm
-from app.models import User
+from app.forms import LoginForm, RegistrationForm, EditProfileForm, PostForm
+from app.models import User, Post
 
-
+#These routes are know as the view function
+# Note the 'Post/Redirect/Get' pattern (even redirect to the same page). This avoids inserting 
+# duplicate posts when a user refreshes the page after submitting a web form.
 @app.before_request
 def before_request():
     if current_user.is_authenticated:
@@ -15,19 +17,21 @@ def before_request():
 
 
 @app.route('/')
-@app.route('/index')
+@app.route('/index') # default method only includes 'GET'
 @login_required
 def index():
+    form = PostForm()
+    if form.validate_on_submit():
+        post = Post(body=form.post.data, author=current_user)
+        db.session.add(post)
+        db.session.commit()
+        flash('Your post is now live!')
+        return redirect(url_for('index'))
     posts = [
-        {
-            'author': {'username': 'John'},
-            'body': 'Beautiful day in Portland!'
-        },
-        {
-            'author': {'username': 'Susan'},
-            'body': 'The Avengers movie was so cool!'
-        }
+        {'author': {'username': 'Miguel'},'body': 'Some beautiful text'},
+        {'author': {'username': 'Susan B'}, 'body': 'Susan B Anthony is the GREATEST!'}
     ]
+
     return render_template('index.html', title='Home', posts=posts)
 
 '''
