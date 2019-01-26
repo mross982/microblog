@@ -1,12 +1,5 @@
-<!-- 
-Jinja2 template inheritance allows for this template to be passed into the base template
- -->
-
 {% extends "base.html" %}
 
-<!-- 
- the block control statement to define the place where the derived templates can insert themselves. Blocks are given a unique name, which derived templates can reference when they provide their content.
- -->
 {% block content %}
     <h1>Hi, {{ current_user.username }}!</h1>
     {% for post in posts %}
@@ -14,8 +7,12 @@ Jinja2 template inheritance allows for this template to be passed into the base 
     {% endfor %}
 {% endblock %}
 
-<!-- 
+<!--  
+Jinja2 template inheritance allows for this template to be passed into the base template
+
+the block control statement to define the place where the derived templates can insert themselves. Blocks are given a unique name, which derived templates can reference when they provide their content.
+
 The render_template() function invokes the Jinja2 template engine that comes bundled 
-with the Flask framework. Jinja2 substitutes {{ ... }} blocks in the template with the 
+with the Flask framework. Jinja2 substitutes blocks in the template with the 
 corresponding values and control statements, given by the arguments provided in the render_template() call.
 -->

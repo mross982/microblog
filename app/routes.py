@@ -20,13 +20,13 @@ def before_request():
 @app.route('/index') # default method only includes 'GET'
 @login_required
 def index():
-    form = PostForm()
-    if form.validate_on_submit():
-        post = Post(body=form.post.data, author=current_user)
-        db.session.add(post)
-        db.session.commit()
-        flash('Your post is now live!')
-        return redirect(url_for('index'))
+    # form = PostForm()
+    # if form.validate_on_submit():
+    #     post = Post(body=form.post.data, author=current_user)
+    #     db.session.add(post)
+    #     db.session.commit()
+    #     flash('Your post is now live!')
+    #     return redirect(url_for('index'))
     posts = [
         {'author': {'username': 'Miguel'},'body': 'Some beautiful text'},
         {'author': {'username': 'Susan B'}, 'body': 'Susan B Anthony is the GREATEST!'}
