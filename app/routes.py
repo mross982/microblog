@@ -95,7 +95,9 @@ def user(username):
 @app.route('/edit_profile', methods=['GET', 'POST'])
 @login_required
 def edit_profile():
-    form = EditProfileForm()
+    # form = EditProfileForm() # original
+    form = EditProfileForm(current_user.username) # allows error caused by selecting same username
+    # as someone else to be resolved without interference if you enter your current username
     if form.validate_on_submit():
         current_user.username = form.username.data
         current_user.about_me = form.about_me.data
