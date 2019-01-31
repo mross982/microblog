@@ -8,7 +8,6 @@ from config import Config
 app = Flask(__name__)
 # creates the application object as an instance of class Flask imported from the flask package.
 
-
 app.config.from_object(Config)
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)

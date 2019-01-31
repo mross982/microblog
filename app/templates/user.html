@@ -19,3 +19,11 @@
         {% include '_post.html' %}
     {% endfor %}
 {% endblock %}
+
+<!-- 
+the "% if user.about_me %" checks the database for this information because these fields were added after the fact. When present, the data will be displayed.
+
+the "% if user == current_user %" is a clever conditional that returns true only when the user is viewing his or her own page
+
+notice how the sub template is called by the % include method. All variables passed to here (user & posts) will be passed to the sub template as well.
+ -->

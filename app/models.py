@@ -1,5 +1,5 @@
 from datetime import datetime
-from hashlib import md5
+from hashlib import md5 # for the avitar
 from app import db, login
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -24,9 +24,19 @@ class User(UserMixin, db.Model):
         return check_password_hash(self.password_hash, password)
 
     def avatar(self, size):
-        digest = md5(self.email.lower().encode('utf-8')).hexdigest()
+        '''
+        The new avatar() method of the User class returns the URL of the user's avatar image, scaled to the 
+        requested size in pixels. For users that don't have an avatar registered, an "identicon" image will 
+        be generated. To generate the MD5 hash, I first convert the email to lower case, as this is required 
+        by the Gravatar service. Then, because the MD5 support in Python works on bytes and not on strings, 
+        I encode the string as bytes before passing it on to the hash function.
+        - this is called from the user template & _post sub template 
+        '''
+        digest = md5(self.email.lower().encode('utf-8')).hexdigest() # gets a hash code for user's email address
         return 'https://www.gravatar.com/avatar/{}?d=identicon&s={}'.format(
-            digest, size)
+            digest, size) # from gravatar, sends in hash code, (?-new arg) d argument for returning images
+            # from unregistered users (identicon = geometric shapes), (&-new arg) s for size in pixels 
+            # default (80 x 80)
 
 
 @login.user_loader
@@ -67,6 +77,9 @@ User model to the migration script. The flask db migrate sub-command generates t
 migrations:
 
 (venv) $ flask db migrate -m "users table"
+
+If you were to add new fields to the database, you would need to perform this same step
+(venv) $ flask db migrate -m "new fields in user model"
 
 The generated migration script has two functions called upgrade() and downgrade(). The upgrade() 
 function applies the migration, and the downgrade() function removes it.

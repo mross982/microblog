@@ -9,10 +9,21 @@ from app.models import User, Post
 #These routes are know as the view function
 # Note the 'Post/Redirect/Get' pattern (even redirect to the same page). This avoids inserting 
 # duplicate posts when a user refreshes the page after submitting a web form.
+
+
 @app.before_request
 def before_request():
+    '''
+    The @before_request decorator from Flask register the decorated function to be executed right 
+    before the view function. This is extremely useful because now I can insert code that I want 
+    to execute before any view function in the application, and I can have it in a single place. 
+    The implementation simply checks if the current_user is logged in, and in that case sets the 
+    last_seen field to the current time. 
+    '''
     if current_user.is_authenticated:
         current_user.last_seen = datetime.utcnow()
+        # the reason db.session.add() is not located here is b/c current_user indicates the database
+        # has already been queried that will add the user to the database session.
         db.session.commit()
 
 
@@ -80,11 +91,18 @@ def register():
         return redirect(url_for('login'))
     return render_template('register.html', title='Register', form=form)
 
-
+'''
+When a route has a dynamic component (e.g. <>), Flask will accept any text in that portion 
+of the URL, and will invoke the view function with the actual text as an argument. For 
+example, if the client browser requests URL /user/susan, the view function is going to be 
+called with the argument username set to 'susan'. 
+'''
 @app.route('/user/<username>')
 @login_required
 def user(username):
-    user = User.query.filter_by(username=username).first_or_404()
+    user = User.query.filter_by(username=username).first_or_404() # sends a 404 if no match
+    # other query options include .first() and .all()
+    # returns user object with attributes of field names in the database
     posts = [
         {'author': user, 'body': 'Test post #1'},
         {'author': user, 'body': 'Test post #2'}
@@ -98,14 +116,14 @@ def edit_profile():
     # form = EditProfileForm() # original
     form = EditProfileForm(current_user.username) # allows error caused by selecting same username
     # as someone else to be resolved without interference if you enter your current username
-    if form.validate_on_submit():
+    if form.validate_on_submit(): # only returns true if a POST method AND information is validated
         current_user.username = form.username.data
         current_user.about_me = form.about_me.data
         db.session.commit()
-        flash('Your changes have been saved.')
+        flash('Your changes have been saved.') # sends text to the flash section of the base template
         return redirect(url_for('edit_profile'))
-    elif request.method == 'GET':
-        form.username.data = current_user.username
-        form.about_me.data = current_user.about_me
+    elif request.method == 'GET': # if the client is GET info (i.e. first directed to the URL)
+        form.username.data = current_user.username # fill in the fields with previously entered data
+        form.about_me.data = current_user.about_me # from the database
     return render_template('edit_profile.html', title='Edit Profile',
                            form=form)
