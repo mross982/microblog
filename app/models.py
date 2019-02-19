@@ -5,6 +5,14 @@ from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 
 
+# see section on followers below
+# Note that I am not declaring this table as a model, like I did for the users and 
+# posts tables. Since this is an auxiliary table that has no data other than the foreign 
+# keys, I created it without an associated model class.
+followers = db.Table('followers',
+    db.Column('follower_id', db.Integer, db.ForeignKey('user.id')),
+    db.Column('followed_id', db.Integer, db.ForeignKey('user.id')))
+
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), index=True, unique=True)
@@ -13,6 +21,57 @@ class User(UserMixin, db.Model):
     posts = db.relationship('Post', backref='author', lazy='dynamic')
     about_me = db.Column(db.String(140))
     last_seen = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+    # Many to Many self-referential relationship table
+    followed = db.relationship(
+        # 'User' is the right side entity of the relationship
+        'User', secondary=followers,
+        # The followers.c.follower_id expression references the follower_id column of the association table.
+        # primaryjoin indicates the condition that links the left side entity (the follower user) with the association table.
+        primaryjoin=(followers.c.follower_id == id),
+        # secondaryjoin indicates the condition that links the right side entity (the followed user) with the association table.
+        secondaryjoin=(followers.c.followed_id == id),
+        # backref defines how this relationship will be accessed from the right side entity. From the left side, the relationship 
+        # is named followed, so from the right side I am going to use the name followers 
+        backref=db.backref('followers', lazy='dynamic'), lazy='dynamic')
+        # The additional lazy argument indicates the execution mode for this query. A mode of dynamic sets up the query to not 
+        # run until specifically requested,
+
+    def follow(self, user):
+        # method to add follower to user; user1.followed.append(user2)
+        if not self.is_following(user): # prevents duplicate unfollow data records between the two users
+            self.followed.append(user)
+
+    def unfollow(self, user):
+        # user1.followed.remove(user2)
+        if self.is_following(user): # prevents duplicate unfollow data records between the two users
+            self.followed.remove(user)
+
+    def is_following(self, user):
+        # The is_following() method issues a query on the followed relationship to check if a link between two users already exists. 
+        return self.followed.filter(
+            followers.c.followed_id == user.id).count() > 0
+
+    # there are three main sections designed by the join(), filter() and order_by() methods of the SQLAlchemy query object
+    def followed_posts(self):
+        # What I'm saying with this call is that I want the database to create a temporary table that combines data from posts 
+        # and followers tables. The data is going to be merged according to the condition that I passed as argument.
+        followed = Post.query.join(
+            # The first argument is the followers association table,
+            # the second argument is the join condition.
+            followers, (followers.c.followed_id == Post.user_id)).filter(
+            #  the followed_id field of the followers table must be equal to the user_id of the posts table.
+                followers.c.follower_id == self.id).order_by(
+                # Since this query is in a method of class User, the self.id expression refers to the user ID of the user I'm interested in.
+                    Post.timestamp.desc())
+                    # Most recent time stamp first
+        own = Post.query.filter_by(user_id=self.id)
+        # query that returns your own posts
+        return followed.union(own).order_by(Post.timestamp.desc())
+        # own and followed are combined the resorted
+
+
 
     def __repr__(self): # tells python what to do when the print() method is invoked
         return '<User {}>'.format(self.username)
@@ -53,8 +112,25 @@ class Post(db.Model):
     def __repr__(self):
         return '<Post {}>'.format(self.body)
 
+
+
 '''
+Troubleshooting
+
+interact with app database by starting shell
+(venv) $ flask shell
+
+print list of tables in the database
+>>> print(db.metadata.tables.keys())
+
+>>> for table in db.metadata.tables.keys():
+...     tb = db.table(table)
+...     pprint(tb.__dict__)
+
+
 to see the def__repr__ results type the following into the interpreter:
+
+>>> flask shell
 
 >>> from app.models import User
 >>> u = User(username='susan', email='susan@example.com')
@@ -162,4 +238,76 @@ Final Clean up
 ...     db.session.delete(p)
 ...
 >>> db.session.commit()
+...
+
+******************************** FOLLOWERS *******************************
+The representation of a many-to-many relationship requires the use of an 
+auxiliary table called an association table.
+While it may not seem obvious at first, the association table with its 
+two foreign keys is able to efficiently answer all the queries about the relationship.
+
+Looking at the summary of all the relationship types, it is easy to determine that 
+the proper data model to track followers is the many-to-many relationship, because 
+a user follows many users, and a user has many followers. 
+But there is a twist. In the students and teachers example I had two entities that 
+were related through the many-to-many relationship. But in the case of followers, I 
+have users following other users, so there is just users.
+
+The second entity of the relationship is also the users. A relationship in which 
+instances of a class are linked to other instances of the same class is called a 
+self-referential relationship.
+
+AFter creating the new relationshio table,
+The changes to the database need to be recorded in a new database migration:
+
+(venv) $ flask db migrate -m "followers"
+(venv) $ flask db upgrade
+
+the is_following() supporting method to make sure the requested action makes sense. 
+For example, if I ask user1 to follow user2, but it turns out that this following 
+relationship already exists in the database, I do not want to add a duplicate. The 
+same logic can be applied to unfollowing.
+
+Obtaining the Posts from Followed Users
+
+The most obvious solution is to run a query that returns the list of followed users, 
+which as you already know, it would be user.followed.all(). Then for each of these 
+returned users I can run a query to get the posts. Once I have all the posts I can 
+merge them into a single list and sort them by date. Sounds good? Well, not really.
+This is actually an awful solution that does not scale well.
+
+There is really no way to avoid this merging and sorting of blog posts, but doing 
+it in the application results in a very inefficient process. This kind of work is 
+what relational databases excel at. The database has indexes that allow it to 
+perform the queries and the sorting in a much more efficient way that I can 
+possibly do from my side. So what I really want is to come up with a single 
+database query that defines the information that I want to get, and then let the 
+database figure out how to extract that information in the most efficient way.
+
+Joins
+Post.query.join(followers, (followers.c.followed_id == Post.user_id))
+
+imaging the table structure required to retrieve the posts of of a uers's followed
+users. 
+JOIN
+First query identifies the user ID from the UserName. 
+Second query matches the user IDs of the users followed accounts in relation table.
+Third quiery returns the post IDs of the followed users
+FILTER
+Forth filter query results for the posts followed by a single user
+ORDER BY
+Fifth sort qurey results by (Post.timestamp.desc()) for example
+
+
+
+
+
+
+Even though adding and removing followers is fairly easy, I want to promote reusability 
+in my code, so I'm not going to sprinkle "appends" and "removes" through the code. Instead,
+I'm going to implement the "follow" and "unfollow" functionality as methods in the User model. 
+It is always best to move the application logic away from view functions and into models or 
+other auxiliary classes or modules, because as you will see later in this chapter, that makes 
+unit testing much easier.
+
 '''
