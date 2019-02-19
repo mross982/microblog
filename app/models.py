@@ -125,7 +125,7 @@ print list of tables in the database
 
 >>> for table in db.metadata.tables.keys():
 ...     tb = db.table(table)
-...     pprint(tb.__dict__)
+...     pprint(tb.__dict__.keys())
 
 
 to see the def__repr__ results type the following into the interpreter:

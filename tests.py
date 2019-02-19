@@ -88,3 +88,13 @@ class UserModelCase(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
+
+'''
+(venv) $ python tests.py
+
+test_avatar (__main__.UserModelCase) ... ok
+test_follow (__main__.UserModelCase) ... ok
+test_follow_posts (__main__.UserModelCase) ... ok
+test_password_hashing (__main__.UserModelCase) ... ok
+
+'''
