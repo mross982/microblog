@@ -4,5 +4,5 @@ This is an example application featured in my [Flask Mega-Tutorial](https://blog
 
 It is always best to move the application logic away from view functions and into models or other auxiliary classes or modules, because as you will see later in this chapter, that makes unit testing much easier.
 
-Start on tests.py in the main file
+The build for followers included 1. (models.py) create the database elements 2. (test.py) create tests 3. (routes.py) create the view functions 4. Add elements into the html
 
