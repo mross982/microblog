@@ -107,6 +107,10 @@ class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     body = db.Column(db.String(140))
     timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    # When you pass a function as a default, SQLAlchemy will set the field 
+    # to the value of calling that function (note that I did not include the 
+    # () after utcnow, so I'm passing the function itself, and not the result 
+    # of calling it)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
     def __repr__(self):

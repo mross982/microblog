@@ -11,11 +11,13 @@ app = Flask(__name__)
 app.config.from_object(Config)
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
-login = LoginManager(app)
+login = LoginManager(app) # ensures content cannot be viewed if user is not logged in.
 login.login_view = 'login'
+# The 'login' value above is the function (or endpoint) name for the login view. In other words, 
+# the name you would use in a url_for() call to get the URL.
 
 # app is the package; routes, models, etc. are the modules
-from app import routes, models, errors
+from app import routes, models, errors, forms
 '''
 One aspect that may seem confusing at first is that there are two entities named app. 
 The app package is defined by the app directory and the __init__.py script, and is 

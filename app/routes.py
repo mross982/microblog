@@ -107,6 +107,7 @@ def user(username):
         {'author': user, 'body': 'Test post #1'},
         {'author': user, 'body': 'Test post #2'}
     ]
+    # posts = User.query.
     return render_template('user.html', user=user, posts=posts)
 
 
