@@ -2,6 +2,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
+from flask_mail import Mail
 from config import Config
 
 # line below (and from app inport routes) is all you need for a basic app
@@ -15,6 +16,7 @@ login = LoginManager(app) # ensures content cannot be viewed if user is not logg
 login.login_view = 'login'
 # The 'login' value above is the function (or endpoint) name for the login view. In other words, 
 # the name you would use in a url_for() call to get the URL.
+mail = Mail(app)
 
 # app is the package; routes, models, etc. are the modules
 from app import routes, models, errors, forms
@@ -75,4 +77,25 @@ second terminal session and run the following command on it:
 Leave the debugging SMTP server running and go back to your first terminal and set 
 MAIL_SERVER=localhost and and MAIL_PORT=8025 in the environment. Make sure the FLASK_DEBUG 
 variable is set to 0
+
+SETTINGS FOR GMAIL
+(venv) $ set MAIL_SERVER=smtp.googlemail.com
+(venv) $ set MAIL_PORT=587
+(venv) $ set MAIL_USE_TLS=1
+(venv) $ set MAIL_USERNAME=<your-gmail-username>
+(venv) $ set MAIL_PASSWORD=<your-gmail-password>
+
+Remember that the security features in your Gmail account may prevent the application from 
+sending emails through it unless you explicitly allow "less secure apps" access to your Gmail 
+account.
+
+(venv) $ flask shell 
+
+>>> from flask_mail import Message
+>>> from app import mail
+>>> msg = Message('test subject', sender=app.config['ADMINS'][0],
+... recipients=['your-email@example.com'])
+>>> msg.body = 'text body'
+>>> msg.html = '<h1>HTML body</h1>'
+>>> mail.send(msg)
 '''

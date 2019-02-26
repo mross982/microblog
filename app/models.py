@@ -18,7 +18,7 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(64), index=True, unique=True)
     email = db.Column(db.String(120), index=True, unique=True)
     password_hash = db.Column(db.String(128))
-    posts = db.relationship('Post', backref='author', lazy='dynamic')
+    posts = db.relationship('Post', backref='author', lazy='dynamic') # relationship means author is an attribute from posts to users
     about_me = db.Column(db.String(140))
     last_seen = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -53,23 +53,33 @@ class User(UserMixin, db.Model):
         return self.followed.filter(
             followers.c.followed_id == user.id).count() > 0
 
-    # there are three main sections designed by the join(), filter() and order_by() methods of the SQLAlchemy query object
     def followed_posts(self):
-        # What I'm saying with this call is that I want the database to create a temporary table that combines data from posts 
-        # and followers tables. The data is going to be merged according to the condition that I passed as argument.
+        '''
+        What I'm saying with this call is that I want the database to create a temporary table that combines data from posts 
+        and followers tables. The data is going to be merged according to the condition that I passed as argument.
+        '''
         followed = Post.query.join(
-            # The first argument is the followers association table,
-            # the second argument is the join condition.
             followers, (followers.c.followed_id == Post.user_id)).filter(
-            #  the followed_id field of the followers table must be equal to the user_id of the posts table.
-                followers.c.follower_id == self.id).order_by(
-                # Since this query is in a method of class User, the self.id expression refers to the user ID of the user I'm interested in.
-                    Post.timestamp.desc())
-                    # Most recent time stamp first
+                followers.c.follower_id == self.id)
         own = Post.query.filter_by(user_id=self.id)
-        # query that returns your own posts
         return followed.union(own).order_by(Post.timestamp.desc())
-        # own and followed are combined the resorted
+
+    # EXPLANATION OF ABOVE
+    # # there are three main sections designed by the join(), filter() and order_by() methods of the SQLAlchemy query object
+    # def followed_posts(self):
+    #     followed = Post.query.join(
+    #         # The first argument is the followers association table,
+    #         # the second argument is the join condition.
+    #         followers, (followers.c.followed_id == Post.user_id)).filter(
+    #         #  the followed_id field of the followers table must be equal to the user_id of the posts table.
+    #         followers.c.follower_id == self.id).order_by(
+    #         # Since this query is in a method of class User, the self.id expression refers to the user ID of the user I'm interested in.
+    #         Post.timestamp.desc())
+    #         # Most recent time stamp first
+    #     own = Post.query.filter_by(user_id=self.id)
+    #     # query that returns your own posts
+    #     return followed.union(own).order_by(Post.timestamp.desc())
+    #     # own and followed are combined the resorted
 
 
 
