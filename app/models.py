@@ -1,9 +1,15 @@
 from datetime import datetime
 from hashlib import md5 # for the avitar
-from app import db, login
+from time import time
+import jwt
+from app import db, login, app
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 
+
+@login.user_loader
+def load_user(id):
+    return User.query.get(int(id))
 
 # see section on followers below
 # Note that I am not declaring this table as a model, like I did for the users and 
@@ -107,10 +113,29 @@ class User(UserMixin, db.Model):
             # from unregistered users (identicon = geometric shapes), (&-new arg) s for size in pixels 
             # default (80 x 80)
 
+    # Since these tokens belong to users, I'm going to write the token generation and verification functions 
+    # as methods in the User model:
+    def get_reset_password_token(self, expires_in=600):
+        '''
+        generates a JWT token as a string
+        '''
+        return jwt.encode(
+            {'reset_password': self.id, 'exp': time() + expires_in},
+            app.config['SECRET_KEY'], algorithm='HS256').decode('utf-8')
 
-@login.user_loader
-def load_user(id):
-    return User.query.get(int(id))
+
+    @staticmethod
+    def verify_reset_password_token(token):
+        '''
+        static method, which means that it can be invoked directly from the class. A static method is similar 
+        to a class method, with the only difference that static methods do not receive the class as a first argument
+        '''
+        try: # If the token is valid, then the value of the reset_password key from the token's payload is the ID of the user
+            id = jwt.decode(token, app.config['SECRET_KEY'],
+                            algorithms=['HS256'])['reset_password']
+        except:
+            return
+        return User.query.get(id)
 
 
 class Post(db.Model):

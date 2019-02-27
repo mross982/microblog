@@ -5,7 +5,7 @@ from werkzeug.urls import url_parse
 from app import app, db
 from app.forms import LoginForm, RegistrationForm, EditProfileForm, PostForm
 from app.models import User, Post
-from app.forms import ResetPasswordRequestForm
+from app.forms import ResetPasswordRequestForm, ResetPasswordForm
 from app.email import send_password_reset_email
 
 '''
@@ -76,6 +76,7 @@ def index():
     return render_template('index.html', title='Home', form=form,
                            posts=posts.items, next_url=next_url,
                            prev_url=prev_url)
+    # SCAFFOLDING
     # posts = [
     #     {'author': {'username': 'Miguel'},'body': 'Some beautiful text'},
     #     {'author': {'username': 'Susan B'}, 'body': 'Susan B Anthony is the GREATEST!'}
@@ -93,7 +94,8 @@ def login():
         return redirect(url_for('index'))
     form = LoginForm()
     if form.validate_on_submit():
-        # user = {'username', 'Michael'} # mock user object for initial dev
+        # SCAFFOLDING
+        # user = {'username', 'Michael'}
         user = User.query.filter_by(username=form.username.data).first()
         if user is None or not user.check_password(form.password.data):
             flash('Invalid username or password')
@@ -161,7 +163,6 @@ def user(username):
 @app.route('/edit_profile', methods=['GET', 'POST'])
 @login_required
 def edit_profile():
-    # form = EditProfileForm() # original
     form = EditProfileForm(current_user.username) # allows error caused by selecting same username
     # as someone else to be resolved without interference if you enter your current username
     if form.validate_on_submit(): # only returns true if a POST method AND information is validated
@@ -183,7 +184,9 @@ def explore():
     '''
     Notice the index.html template is reused from '/index' however, there is no form and the posts are not filtered
     '''
+    # SCAFFOLDING
     # posts = Post.query.order_by(Post.timestamp.desc()).all()
+
     page = request.args.get('page', 1, type=int)
     posts = Post.query.order_by(Post.timestamp.desc()).paginate(
         page, app.config['POSTS_PER_PAGE'], False)
@@ -246,3 +249,19 @@ def reset_password_request():
         return redirect(url_for('login'))
     return render_template('reset_password_request.html',
                            title='Reset Password', form=form)
+
+
+@app.route('/reset_password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    if current_user.is_authenticated: #Make sure user isn't logged in
+        return redirect(url_for('index'))
+    user = User.verify_reset_password_token(token) # verify token returning user
+    if not user:
+        return redirect(url_for('index')) # if the token was not verified, returned None
+    form = ResetPasswordForm()
+    if form.validate_on_submit():
+        user.set_password(form.password.data)
+        db.session.commit()
+        flash('Your password has been reset.')
+        return redirect(url_for('login'))
+    return render_template('reset_password.html', form=form)
