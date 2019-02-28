@@ -6,6 +6,8 @@ from flask_mail import Mail
 from config import Config
 from flask_bootstrap import Bootstrap
 from flask_moment import Moment
+# from flask_babel import Babel
+# from flask import request
 
 # line below (and from app inport routes) is all you need for a basic app
 app = Flask(__name__)
@@ -20,7 +22,15 @@ login.login_view = 'login'
 # the name you would use in a url_for() call to get the URL.
 mail = Mail(app)
 bootstrap = Bootstrap(app)
-moment = Moment(app)
+moment = Moment(app) # unlike other extensions, moment works with moment.js
+# Moment.js makes a moment class available to the browser.
+
+# for translating the text into various languages
+# babel = Babel(app)
+# @babel.localeselector
+# def get_locale():
+#     return request.accept_languages.best_match(app.config['LANGUAGES'])
+
 
 # app is the package; routes, models, etc. are the modules
 from app import routes, models, errors, forms

@@ -48,12 +48,19 @@
     </div>
 {% endblock %}
 
+{% block scripts %}
+    {{ super() }}
+    {{ moment.include_moment() }}
+{% endblock %}
+
 <!-- 
 The title block needs to define the text that will be used for the page title, with the <title> tags.
 
 The navbar block is an optional block that can be used to define a navigation bar. For this block, I adapted the example in the Bootstrap navigation bar documentation
 
 the content block I'm defining a top-level container, and inside it I have the logic that renders flashed messages, which are now going to appear styled as Bootstrap alerts. That is followed with a new app_content block that is defined just so that derived templates can define their own content.
+
+block scripts is a block exported by Flask-Bootstrap's base template. This is the place where JavaScript imports are to be included. This block is different from previous ones in that it already comes with some content defined in the base template. All I want to do is add the moment.js library, without losing the base contents. And this is achieved with the super() statement, which preserves the content from the base template. If you define a block in your template without using super(), then any content defined for this block in the base template will be lost.
 
 The original version of all the page templates defined their content in a block named content. As you saw above, the block named content is used by Flask-Bootstrap, so I renamed my content block as app_content. So ALL MY TEMPLATES have to be renamed to use app_content as their content block.
  -->
