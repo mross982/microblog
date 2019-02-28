@@ -4,6 +4,8 @@ from flask_migrate import Migrate
 from flask_login import LoginManager
 from flask_mail import Mail
 from config import Config
+from flask_bootstrap import Bootstrap
+from flask_moment import Moment
 
 # line below (and from app inport routes) is all you need for a basic app
 app = Flask(__name__)
@@ -17,6 +19,8 @@ login.login_view = 'login'
 # The 'login' value above is the function (or endpoint) name for the login view. In other words, 
 # the name you would use in a url_for() call to get the URL.
 mail = Mail(app)
+bootstrap = Bootstrap(app)
+moment = Moment(app)
 
 # app is the package; routes, models, etc. are the modules
 from app import routes, models, errors, forms
